@@ -1,4 +1,5 @@
 #include "config.h"
+#include "udp_io.h"
 
 #include <iostream>
 
@@ -21,8 +22,27 @@ int run(const Config& config) {
         std::cout << "[CHECK] configuration valid; no socket or output file created\n";
         return 0;
     }
-    std::cerr << "[NOT_IMPLEMENTED] configuration is ready; connection and transfer "
-                 "modules are not implemented yet. Use --check to validate only.\n";
+    //初始化网络环境
+    udp_initialize();
+    //先准备一个无效句柄
+    UdpSocket socket = kInvalidUdpSocket;
+    try {
+        //创建 Socket，并绑定本地 IP 和端口
+        socket = udp_open_bound({config.bind_ip, config.bind_port});
+        //查询实际绑定的本地地址
+        const auto local = udp_local_endpoint(socket);
+        std::cout << "[UDP_READY] local=" << local.ip << ':' << local.port
+                  << " router=" << config.router_ip << ':' << config.router_port << '\n';
+        // Later modules will use this handle, and send DATA/ACK to the router.
+        std::cerr << "[NOT_IMPLEMENTED] UDP is ready; connection and reliable transfer "
+                     "modules are not implemented yet.\n";
+    } catch (...) {
+        udp_close(socket);
+        udp_cleanup();
+        throw;
+    }
+    udp_close(socket);
+    udp_cleanup();
     return 4;
 }
 
