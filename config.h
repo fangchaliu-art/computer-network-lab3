@@ -1,6 +1,8 @@
 #ifndef LAB3_CONFIG_H
 #define LAB3_CONFIG_H
 
+#include "protocol.h"
+
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
@@ -8,11 +10,6 @@
 #include <vector>
 
 namespace lab3 {
-
-inline constexpr std::uint32_t kHeaderBytes = 24;
-inline constexpr std::uint32_t kRouterMaxPacketBytes = 15000;
-// An implementation resource limit, rather than a restriction of SR itself.
-inline constexpr std::uint32_t kMaxWindow = 1024;
 
 enum class Mode { Send, Receive };
 
@@ -42,6 +39,8 @@ struct Config {
     std::string log_level = "info";
     //是否只检查配置
     bool check_only = false;
+    // Exercise an empty connection only; no selected file is transferred.
+    bool connection_test = false;
     std::uintmax_t file_bytes = 0;
 };
 

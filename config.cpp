@@ -34,12 +34,13 @@ Options (use separate option and value, e.g. --window 16):
                         (default: 120000)
   --log-level LEVEL      info or debug (default: info)
   --check                Validate and print config; do not start transfer
+  --connection-test      Establish/close an empty test session; no file transfer
   --help, -h             Show help
 
 Both peers must use the same window and payload settings for now.
 Loss and delay are configured in the teacher's Router.exe.
 Router server address must match the receiver's bind address and port.
-This module performs no socket operations and never creates output files.
+--check performs no socket operations and never creates output files.
 )HELP";
 }
 
@@ -105,6 +106,11 @@ Config parse_config(const std::vector<std::string>& args) {
     std::unordered_map<std::string, std::string> options;
     for (std::size_t i = 1; i < args.size(); ++i) {
         const auto& key = args[i];
+        if (key == "--connection-test") {
+            if (config.connection_test) throw ConfigError("duplicate option: --connection-test");
+            config.connection_test = true;
+            continue;
+        }
         if (key == "--check") {
             if (config.check_only) throw ConfigError("duplicate option: --check");
             config.check_only = true;

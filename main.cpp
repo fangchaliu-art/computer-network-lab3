@@ -1,5 +1,6 @@
 #include "config.h"
 #include "udp_io.h"
+#include "connection.h"
 
 #include <iostream>
 
@@ -16,6 +17,7 @@ namespace fs = std::filesystem;
 namespace lab3 {
 
 int run(const Config& config) {
+    std::cout << std::unitbuf;
     //打印最终采用的配置打印
     print_config(config);
     if (config.check_only) {
@@ -33,9 +35,25 @@ int run(const Config& config) {
         const auto local = udp_local_endpoint(socket);
         std::cout << "[UDP_READY] local=" << local.ip << ':' << local.port
                   << " router=" << config.router_ip << ':' << config.router_port << '\n';
-        // Later modules will use this handle, and send DATA/ACK to the router.
-        std::cerr << "[NOT_IMPLEMENTED] UDP is ready; connection and reliable transfer "
-                     "modules are not implemented yet.\n";
+        if (config.connection_test) {
+            std::cout << "[CONNECTION_TEST] empty session only; selected file is not transferred\n";
+            const UdpEndpoint router{config.router_ip, config.router_port};
+            const ConnectionOptions options{config.rto_ms, config.max_retries,
+                                            config.idle_timeout_ms, &std::cout};
+            if (config.mode == Mode::Send) {
+                auto connection = connect_sender(socket, router, static_cast<std::uint16_t>(config.window),
+                    {0, static_cast<std::uint16_t>(config.payload)}, options);
+                close_sender(socket, router, connection, options, true);
+            } else {
+                auto connection = accept_receiver(socket, router, static_cast<std::uint16_t>(config.window),
+                                                   static_cast<std::uint16_t>(config.payload), options);
+                close_receiver(socket, router, connection, options, true);
+            }
+            std::cout << "[CONNECTION_TEST_OK] closed; no file transferred or created\n";
+        } else {
+            std::cerr << "[NOT_IMPLEMENTED] reliable file transfer is not implemented yet; "
+                         "use --connection-test to exercise connection management.\n";
+        }
     } catch (...) {
         udp_close(socket);
         udp_cleanup();
@@ -43,7 +61,7 @@ int run(const Config& config) {
     }
     udp_close(socket);
     udp_cleanup();
-    return 4;
+    return config.connection_test ? 0 : 4;
 }
 
 } 
